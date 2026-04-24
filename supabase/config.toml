@@ -1,0 +1,31 @@
+[project]
+id = "funreel-local"
+
+[api]
+enabled = true
+port = 54321
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "http://localhost:3015"
+additional_redirect_urls = ["http://localhost:3017"]
+
+[auth.jwt]
+# 请替换为你的 JWT Secret
+_secret = "YOUR_JWT_SECRET_HERE"

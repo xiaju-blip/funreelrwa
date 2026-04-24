@@ -1,0 +1,23 @@
+-- 简化版迁移：创建用户表和测试数据
+-- 1. 创建 users 表
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(100) UNIQUE,
+  phone VARCHAR(20) UNIQUE,
+  password_hash VARCHAR(255),
+  wallet_address VARCHAR(100) UNIQUE,
+  nickname VARCHAR(50) NOT NULL DEFAULT 'User',
+  avatar TEXT DEFAULT 'https://api.dicebear.com/7.x/avataaars/svg?seed=default',
+  kyc_level SMALLINT DEFAULT 0,
+  vip_level SMALLINT DEFAULT 0,
+  vip_expire_at TIMESTAMP,
+  invite_code VARCHAR(20) UNIQUE NOT NULL,
+  inviter_id UUID REFERENCES users(id),
+  points INTEGER DEFAULT 0,
+  token_balance DECIMAL(20,8) DEFAULT 0,
+  language VARCHAR(10) DEFAULT 'zh',
+  timezone VARCHAR(50) DEFAULT 'Asia/Shanghai',
+  status SMALLINT DEFAULT 1,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
