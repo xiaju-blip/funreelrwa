@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Smartphone, Mail, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Smartphone, Mail, Eye, EyeOff, Gift } from 'lucide-react';
 import { useI18n } from '../hooks/useI18n';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 export default function Register() {
   const { t } = useI18n();
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [tab, setTab] = useState<'phone' | 'email'>('phone');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -19,6 +20,7 @@ export default function Register() {
     email: '',
     password: '',
     code: '',
+    inviteCode: searchParams.get('invite') || '',
   });
   const [countdown, setCountdown] = useState(0);
 
@@ -88,7 +90,17 @@ export default function Register() {
     try {
       const email = tab === 'email' ? form.email : `${form.phone}@phone.funreel.com`;
       const nickname = tab === 'phone' ? `用户${form.phone.slice(-4)}` : form.email.split('@')[0];
-      await register(email, form.password, nickname);
+      const user = await register(email, form.password, nickname);
+      
+      if (form.inviteCode && user?.id) {
+        const { supabase } = await import('../supabase/client');
+        await supabase.from('invite_records').insert({
+          inviter_id: form.inviteCode,
+          invited_id: user.id,
+          status: 1,
+        });
+      }
+      
       navigate('/profile');
     } catch (err: any) {
       setError(err.message || '注册失败');
@@ -207,6 +219,31 @@ export default function Register() {
                 </button>
               </div>
             </div>
+
+            {form.inviteCode && (
+              <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                <Gift className="w-5 h-5 text-green-400" />
+                <span className="text-green-400 text-sm">
+                  {t('register.inviteApplied') || '邀请码已应用，注册后可获得奖励'}
+                </span>
+              </div>
+            )}
+
+            {!form.inviteCode && (
+              <div>
+                <label className="text-gray-400 text-sm mb-2 block">{t('register.inviteCode') || '邀请码（可选）'}</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={form.inviteCode}
+                    onChange={(e) => setForm({ ...form, inviteCode: e.target.value.toUpperCase() })}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none"
+                    placeholder={t('register.invitePlaceholder') || '输入邀请码'}
+                  />
+                  <Gift className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
+                </div>
+              </div>
+            )}
 
             {error && (
               <motion.div

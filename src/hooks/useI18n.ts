@@ -671,6 +671,9 @@ FunReelRWA — 共创价值，共享成功。
       hasAccount: '已有账号？',
       login: '立即登录',
       success: '注册成功',
+      inviteCode: '邀请码（可选）',
+      invitePlaceholder: '输入邀请码',
+      inviteApplied: '邀请码已应用，注册后可获得奖励',
     },
     common: {
       loading: '加载中...',
@@ -1011,6 +1014,9 @@ drama: {
       hasAccount: 'Already have an account?',
       login: 'Login Now',
       success: 'Registration Successful',
+      inviteCode: 'Invite Code (Optional)',
+      invitePlaceholder: 'Enter invite code',
+      inviteApplied: 'Invite code applied, you will receive rewards after registration',
     },
     common: {
       loading: 'Loading...',
