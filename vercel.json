@@ -1,17 +1,19 @@
 {
-  "$schema": "https://json-schema.org/schema.json",
-  "name": "funreelrwa",
-  "version": "1.0.0",
-  "build": {
-    "builder": "@vercel/static-build",
-    "config": {
-      "distDir": "dist"
-    }
-  },
+  "$schema": "https://openapi.vercel.com/vercel.json",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": null,
   "routes": [
     {
       "src": "/(.*)",
       "dest": "/dist/$1"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
