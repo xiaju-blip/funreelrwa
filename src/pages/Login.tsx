@@ -85,31 +85,68 @@ export default function Login() {
     }
   };
 
-  const handleWalletLogin = async () => {
+const handleWalletLogin = async () => {
     setError('');
     setLoading(true);
     try {
       const ethereum = (window as any).ethereum;
       
       if (ethereum && ethereum.isMetaMask) {
-        const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+        const accounts = await ethereum.request({ method: 'eth_accounts' });
         
         if (!accounts || accounts.length === 0) {
-          setError('请在钱包中解锁账户后重试');
-          setLoading(false);
-          return;
-        }
-        
-        if (accounts && accounts[0]) {
-          const userData = {
-            id: accounts[0],
-            email: `${accounts[0].slice(0, 8)}...${accounts[0].slice(-6)}@wallet.funreel.com`,
-            nickname: `Wallet_${accounts[0].slice(-6)}`,
-            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${accounts[0]}`,
+          await ethereum.request({ method: 'eth_requestAccounts' });
+          const newAccounts = await ethereum.request({ method: 'eth_accounts' });
+          
+          if (!newAccounts || newAccounts.length === 0) {
+            setError('请在 MetaMask 中添加账户后再试');
+            setLoading(false);
+            return;
+          }
+          
+          localStorage.setItem('funreel_user', JSON.stringify({
+            id: newAccounts[0],
+            email: `${newAccounts[0].slice(0, 8)}...${newAccounts[0].slice(-6)}@wallet.funreel.com`,
+            nickname: `Wallet_${newAccounts[0].slice(-6)}`,
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${newAccounts[0]}`,
             vipLevel: 0,
             points: 0,
             tokenBalance: 0,
-          };
+          }));
+          navigate('/profile');
+          window.location.reload();
+          return;
+        }
+        
+        localStorage.setItem('funreel_user', JSON.stringify({
+          id: accounts[0],
+          email: `${accounts[0].slice(0, 8)}...${accounts[0].slice(-6)}@wallet.funreel.com`,
+          nickname: `Wallet_${accounts[0].slice(-6)}`,
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${accounts[0]}`,
+          vipLevel: 0,
+          points: 0,
+          tokenBalance: 0,
+        }));
+        navigate('/profile');
+        window.location.reload();
+      } else if (ethereum) {
+        setError('请使用 MetaMask 钱包');
+      } else {
+        setError('请安装 MetaMask 钱包');
+      }
+    } catch (err: any) {
+      console.error('Wallet login error:', err);
+      if (err.code === 4001) {
+        setError('已取消连接，请在 MetaMask 中授权');
+      } else if (err.code === -32002) {
+        setError('请在 MetaMask 钱包中确认连接请求');
+      } else {
+        setError(err.message || t('login.error'));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
           localStorage.setItem('funreel_user', JSON.stringify(userData));
           navigate('/profile');
           window.location.reload();
