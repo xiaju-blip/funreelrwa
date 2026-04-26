@@ -147,30 +147,7 @@ const handleWalletLogin = async () => {
       setLoading(false);
     }
   };
-          localStorage.setItem('funreel_user', JSON.stringify(userData));
-          navigate('/profile');
-          window.location.reload();
-        }
-      } else if (ethereum) {
-        setError('检测到钱包但不是 MetaMask，请使用 MetaMask');
-      } else {
-        setError('请安装 MetaMask 钱包后再试');
-      }
-    } catch (err: any) {
-      console.error('Wallet login error:', err);
-      if (err.code === 4001) {
-        setError('用户拒绝了连接请求');
-      } else if (err.message && err.message.includes('wallet must has at least one account')) {
-        setError('请在 MetaMask 中解锁账户后重试');
-      } else {
-        setError(err.message || t('login.error'));
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
+          const handleGoogleLogin = async () => {
     console.log('Google login clicked');
     setError('');
     setLoading(true);
