@@ -89,34 +89,46 @@ const handleWalletLogin = async () => {
     setError('');
     setLoading(true);
     try {
-      const ethereum = (window as any).ethereum;
+      // Find MetaMask specifically
+      let ethereum = (window as any).ethereum;
       
-      if (ethereum && ethereum.isMetaMask) {
-        // Always request authorization to show popup
-        const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-        
-        if (!accounts || accounts.length === 0) {
-          setError('请在 MetaMask 中授权连接');
-          setLoading(false);
-          return;
-        }
-        
-        localStorage.setItem('funreel_user', JSON.stringify({
-          id: accounts[0],
-          email: `${accounts[0].slice(0, 8)}...${accounts[0].slice(-6)}@wallet.funreel.com`,
-          nickname: `Wallet_${accounts[0].slice(-6)}`,
-          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${accounts[0]}`,
-          vipLevel: 0,
-          points: 0,
-          tokenBalance: 0,
-        }));
-        navigate('/profile');
-        window.location.reload();
-      } else if (ethereum) {
-        setError('请使用 MetaMask 钱包');
-      } else {
+      if (!ethereum) {
         setError('请安装 MetaMask 钱包');
+        setLoading(false);
+        return;
       }
+
+      // Check if it's MetaMask (not other wallets like Phantom)
+      const isMetaMask = ethereum.isMetaMask || ethereum.isRabby;
+      if (!isMetaMask) {
+        setError('请使用 MetaMask 钱包');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Requesting MetaMask accounts...');
+      await ethereum.request({ method: 'eth_requestAccounts' });
+      
+      const accounts = await ethereum.request({ method: 'eth_accounts' });
+      
+      if (!accounts || accounts.length === 0) {
+        setError('请在 MetaMask 中授权连接');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Got account:', accounts[0]);
+      localStorage.setItem('funreel_user', JSON.stringify({
+        id: accounts[0],
+        email: `${accounts[0].slice(0, 8)}...${accounts[0].slice(-6)}@wallet.funreel.com`,
+        nickname: `Wallet_${accounts[0].slice(-6)}`,
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${accounts[0]}`,
+        vipLevel: 0,
+        points: 0,
+        tokenBalance: 0,
+      }));
+      navigate('/profile');
+      window.location.reload();
     } catch (err: any) {
       console.error('Wallet login error:', err);
       if (err.code === 4001) {
