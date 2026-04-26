@@ -92,29 +92,12 @@ const handleWalletLogin = async () => {
       const ethereum = (window as any).ethereum;
       
       if (ethereum && ethereum.isMetaMask) {
-        const accounts = await ethereum.request({ method: 'eth_accounts' });
+        // Always request authorization to show popup
+        const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
         
         if (!accounts || accounts.length === 0) {
-          await ethereum.request({ method: 'eth_requestAccounts' });
-          const newAccounts = await ethereum.request({ method: 'eth_accounts' });
-          
-          if (!newAccounts || newAccounts.length === 0) {
-            setError('请在 MetaMask 中添加账户后再试');
-            setLoading(false);
-            return;
-          }
-          
-          localStorage.setItem('funreel_user', JSON.stringify({
-            id: newAccounts[0],
-            email: `${newAccounts[0].slice(0, 8)}...${newAccounts[0].slice(-6)}@wallet.funreel.com`,
-            nickname: `Wallet_${newAccounts[0].slice(-6)}`,
-            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${newAccounts[0]}`,
-            vipLevel: 0,
-            points: 0,
-            tokenBalance: 0,
-          }));
-          navigate('/profile');
-          window.location.reload();
+          setError('请在 MetaMask 中授权连接');
+          setLoading(false);
           return;
         }
         
