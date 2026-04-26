@@ -21,12 +21,21 @@ export default function Login() {
     password: '',
     code: ''
   });
+  const [selectedWallet, setSelectedWallet] = useState<string>('');
 
   const tabs = [
     { id: 'email' as LoginType, icon: Mail, label: t('login.email') },
     { id: 'phone' as LoginType, icon: Phone, label: t('login.phone') },
     { id: 'wallet' as LoginType, icon: WalletIcon, label: t('login.wallet') },
     { id: 'google' as LoginType, icon: Chrome, label: t('login.google') }
+  ];
+
+  const walletProviders = [
+    { id: 'metamask', name: 'MetaMask', icon: '🦊', isDetected: () => !!(window as any).ethereum?.isMetaMask || (window as any).ethereum?.isRabby },
+    { id: 'okx', name: 'OKX', icon: '🟧', isDetected: () => !!(window as any).ethereum?.isOkxWallet },
+    { id: 'phantom', name: 'Phantom', icon: '👻', isDetected: () => !!(window as any).ethereum?.isPhantom },
+    { id: 'coinbase', name: 'Coinbase', icon: '🔵', isDetected: () => !!(window as any).ethereum?.isCoinbaseWallet },
+    { id: 'onekey', name: 'OneKey', icon: '🔑', isDetected: () => !!(window as any).onekey || (window as any).ethereum?.isOneKey },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -85,39 +94,52 @@ export default function Login() {
     }
   };
 
-const handleWalletLogin = async () => {
+  const handleWalletLogin = async (providerId?: string) => {
     setError('');
     setLoading(true);
     try {
-      // Find MetaMask specifically
       let ethereum = (window as any).ethereum;
-      
+      let selectedProvider = providerId;
+
       if (!ethereum) {
-        setError('请安装 MetaMask 钱包');
-        setLoading(false);
-        return;
+        const hasOneKey = (window as any).onekey;
+        if (hasOneKey && providerId === 'onekey') {
+          ethereum = (window as any).onekey;
+        } else {
+          setError('请安装钱包扩展');
+          setLoading(false);
+          return;
+        }
       }
 
-      // Check if it's MetaMask (not other wallets like Phantom)
-      const isMetaMask = ethereum.isMetaMask || ethereum.isRabby;
-      if (!isMetaMask) {
-        setError('请使用 MetaMask 钱包');
-        setLoading(false);
-        return;
+      if (!selectedProvider) {
+        for (const wp of walletProviders) {
+          if (wp.isDetected()) {
+            selectedProvider = wp.id;
+            break;
+          }
+        }
       }
 
-      console.log('Requesting MetaMask accounts...');
+      if (selectedProvider) {
+        const provider = walletProviders.find(p => p.id === selectedProvider);
+        if (provider && !provider.isDetected()) {
+          setError(`未检测到 ${provider.name} 钱包`);
+          setLoading(false);
+          return;
+        }
+      }
+
+      console.log('Requesting wallet accounts, provider:', selectedProvider || 'auto');
       await ethereum.request({ method: 'eth_requestAccounts' });
-      
       const accounts = await ethereum.request({ method: 'eth_accounts' });
-      
+
       if (!accounts || accounts.length === 0) {
-        setError('请在 MetaMask 中授权连接');
+        setError('请在钱包中授权连接');
         setLoading(false);
         return;
       }
-      
-      console.log('Got account:', accounts[0]);
+
       localStorage.setItem('funreel_user', JSON.stringify({
         id: accounts[0],
         email: `${accounts[0].slice(0, 8)}...${accounts[0].slice(-6)}@wallet.funreel.com`,
@@ -132,9 +154,9 @@ const handleWalletLogin = async () => {
     } catch (err: any) {
       console.error('Wallet login error:', err);
       if (err.code === 4001) {
-        setError('已取消连接，请在 MetaMask 中授权');
+        setError('已取消连接，请在钱包中授权');
       } else if (err.code === -32002) {
-        setError('请在 MetaMask 钱包中确认连接请求');
+        setError('请在钱包中确认连接请求');
       } else {
         setError(err.message || t('login.error'));
       }
@@ -142,7 +164,8 @@ const handleWalletLogin = async () => {
       setLoading(false);
     }
   };
-          const handleGoogleLogin = async () => {
+
+  const handleGoogleLogin = async () => {
     console.log('Google login clicked');
     setError('');
     setLoading(true);
@@ -307,22 +330,40 @@ const handleWalletLogin = async () => {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="text-center py-8"
+                className="text-center py-4"
               >
                 <div className="w-20 h-20 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                   <WalletIcon className="w-10 h-10 text-orange-400" />
                 </div>
-                <p className="text-gray-400 mb-6">{t('login.walletDesc')}</p>
+                <p className="text-gray-400 mb-4">{t('login.walletDesc')}</p>
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  {walletProviders.map((provider) => (
+                    <button
+                      key={provider.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedWallet(provider.id);
+                        handleWalletLogin(provider.id);
+                      }}
+                      disabled={loading}
+                      className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-colors disabled:opacity-50 ${
+                        selectedWallet === provider.id
+                          ? 'bg-orange-500/20 border border-orange-500/30'
+                          : 'bg-gray-800 hover:bg-gray-700'
+                      }`}
+                    >
+                      <span className="text-2xl">{provider.icon}</span>
+                      <span className="text-xs text-gray-300">{provider.name}</span>
+                    </button>
+                  ))}
+                </div>
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleWalletLogin();
-                  }}
+                  onClick={() => handleWalletLogin()}
                   disabled={loading}
-                  className="w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-medium hover:from-orange-600 hover:to-orange-700 transition-colors disabled:opacity-50"
+                  className="w-full py-3 bg-gray-700 text-gray-300 rounded-xl font-medium hover:bg-gray-600 transition-colors disabled:opacity-50"
                 >
-                  {loading ? t('common.loading') : t('login.connectWallet')}
+                  {loading ? t('common.loading') : '自动选择'}
                 </button>
               </motion.div>
             )}
