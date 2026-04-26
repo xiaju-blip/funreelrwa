@@ -89,8 +89,13 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
+      console.log('Checking for ethereum...');
+      console.log('window.ethereum:', (window as any).ethereum);
+      
       if (typeof window !== 'undefined' && (window as any).ethereum) {
+        console.log('Ethereum detected, requesting accounts...');
         const accounts = await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
+        console.log('Accounts returned:', accounts);
         
         if (!accounts || accounts.length === 0) {
           setError('请在钱包中解锁账户后重试');
@@ -299,7 +304,11 @@ export default function Login() {
                 </div>
                 <p className="text-gray-400 mb-6">{t('login.walletDesc')}</p>
                 <button
-                  onClick={handleWalletLogin}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleWalletLogin();
+                  }}
                   disabled={loading}
                   className="w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-medium hover:from-orange-600 hover:to-orange-700 transition-colors disabled:opacity-50"
                 >
