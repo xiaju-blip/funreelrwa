@@ -91,6 +91,13 @@ export default function Login() {
     try {
       if (typeof window !== 'undefined' && (window as any).ethereum) {
         const accounts = await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
+        
+        if (!accounts || accounts.length === 0) {
+          setError('请在钱包中解锁账户后重试');
+          setLoading(false);
+          return;
+        }
+        
         if (accounts && accounts[0]) {
           const userData = {
             id: accounts[0],
@@ -106,10 +113,15 @@ export default function Login() {
           window.location.reload();
         }
       } else {
-        setError('请安装 MetaMask 或其他 Web3 钱包');
+        setError('请安装 MetaMask 钱包后再试');
       }
     } catch (err: any) {
-      setError(err.message || t('login.error'));
+      console.error('Wallet login error:', err);
+      if (err.message && err.message.includes('wallet must has at least one account')) {
+        setError('请在 MetaMask 中解锁账户后重试');
+      } else {
+        setError(err.message || t('login.error'));
+      }
     } finally {
       setLoading(false);
     }
